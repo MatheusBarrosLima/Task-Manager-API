@@ -1,5 +1,6 @@
 import { Request, NextFunction, Response } from "express";
 import { string, z } from "zod";
+import { userServices } from "../services/userServices";
 
 export const userControllers = {
   async create(req: Request, res: Response, next: NextFunction) {
@@ -34,6 +35,9 @@ export const userControllers = {
       .strict();
 
       const { name, email, password } = userSchema.parse(req.body);
+
+      const userCreated = await userServices.create({name, email, password})
+
       return res.status(201).json({ message: "User cretead!" });
     } catch (error) {
       return next(error);
