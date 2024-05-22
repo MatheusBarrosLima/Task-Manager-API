@@ -7,4 +7,4 @@ export const router = Router();
 
 router.use(userRoutes);
 router.use(authRoutes);
-router.use(taskRoutes)
+router.use(taskRoutes);
