@@ -54,7 +54,7 @@ export const taskRepository = {
     try {
       const db = await sqliteConnection();
 
-      const querySQL = "DELETE * FROM tasks WHERE id = ?;";
+      const querySQL = "DELETE FROM tasks WHERE id = ?;";
 
       const taskDelete = await db.run(querySQL, [id]);
 

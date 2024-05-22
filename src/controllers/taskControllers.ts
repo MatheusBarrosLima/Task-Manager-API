@@ -49,7 +49,7 @@ export const taskControllers = {
 
       const taskDelete = await taskServices.delete(taskID, userID, taskRepository, );
 
-      return res.status(201).json({ message: "tasl deleted", taskDelete });
+      return res.status(201).json({ message: "task deleted", taskDelete });
     } catch (error) {
       return next(error);
     }
