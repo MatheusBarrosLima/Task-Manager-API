@@ -9,7 +9,7 @@ type UserData = {
 };
 
 type Repository ={
-    createUser(data: UserDataCreate): Promise<{id: string} | undefined>
+    createUser(data: UserDataCreate): Promise<UserDataCreate | undefined>
 }
 
 export const userServices = {
