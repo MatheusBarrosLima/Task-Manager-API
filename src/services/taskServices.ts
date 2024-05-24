@@ -1,18 +1,21 @@
 import { randomUUID } from "node:crypto";
 import { TaskDataTypes } from "../validations/taskSchema";
 import { appError } from "../errors/appError";
+import { PaginationDataTypes } from "../validations/paginationSchema";
 
 export type CreateTaskDataType = TaskDataTypes & { id_user: string };
+export type UserTasksPagination = PaginationDataTypes & { userID: string };
 
 type Repository = {
   createTask(data: CreateTaskDataType): Promise<{} | undefined>;
   updateTask(data: CreateTaskDataType): Promise<{} | undefined>;
   getTask(id: string): Promise<{id_user: string} | undefined>;
+  getTasks(data: UserTasksPagination): Promise<{} | undefined>;
   deleteTask(id: string): Promise<{} | undefined>;
 };
 
 export const taskServices = {
-  async create(data: CreateTaskDataType, repository: Repository) {
+  async create(data:CreateTaskDataType, repository: Repository) {
     try {
       const { title, description, date, status, id_user } = data;
 
@@ -27,6 +30,21 @@ export const taskServices = {
 
       const taskCreated = await repository.createTask(task);      
       return taskCreated;
+    } catch (error) {
+      throw error;
+    }
+  },
+  async read(data: UserTasksPagination, repository: Repository) {
+    try {
+      const {userID, limit, offset, filter} = data;
+
+      if (!limit || !offset || !filter){
+        throw appError("please inform limit, offset and filter", 400)
+      }
+
+      const userTasks = await repository.getTasks({userID, limit, offset, filter});
+
+      return userTasks
     } catch (error) {
       throw error;
     }
@@ -76,4 +94,5 @@ export const taskServices = {
       throw error;
     }
   },
+
 };

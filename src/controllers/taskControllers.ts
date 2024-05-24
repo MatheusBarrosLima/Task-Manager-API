@@ -2,6 +2,7 @@ import { Request, NextFunction, Response } from "express";
 import { taskSchema } from "../validations/taskSchema";
 import { taskServices } from "../services/taskServices";
 import { taskRepository } from "../repositories/taskRepository";
+import { paginationSchema } from "../validations/paginationSchema";
 
 export const taskControllers = {
   async create(req: Request, res: Response, next: NextFunction) {
@@ -20,7 +21,18 @@ export const taskControllers = {
   },
   async read(req: Request, res: Response, next: NextFunction) {
     try {
-      return res.status(200).json({ message: "User read!" });
+      const { limit, offset, filter } = paginationSchema.parse(req.query);
+      const userID = req.userID;
+
+      const userTask = await taskServices.read({
+        userID,
+        limit,
+        offset,
+        filter,
+        
+      }, taskRepository
+    );
+      return res.status(200).json({ message: "tasks read!", ...userTask });
     } catch (error) {
       return next(error);
     }
@@ -30,11 +42,15 @@ export const taskControllers = {
     try {
       const { title, description, date, status } = taskSchema.parse(req.body);
       const userID = req.userID;
-      const {taskID} = req.params;
+      const { taskID } = req.params;
 
       const task = { title, description, date, status, id_user: userID };
 
-      const taskUpdated = await taskServices.update(taskID, task, taskRepository, );
+      const taskUpdated = await taskServices.update(
+        taskID,
+        task,
+        taskRepository
+      );
 
       return res.status(201).json({ message: "task updated!", taskUpdated });
     } catch (error) {
@@ -42,12 +58,16 @@ export const taskControllers = {
     }
   },
 
-  async delete (req: Request, res: Response, next: NextFunction) {
+  async delete(req: Request, res: Response, next: NextFunction) {
     try {
       const userID = req.userID;
-      const {taskID} = req.params;
+      const { taskID } = req.params;
 
-      const taskDelete = await taskServices.delete(taskID, userID, taskRepository, );
+      const taskDelete = await taskServices.delete(
+        taskID,
+        userID,
+        taskRepository
+      );
 
       return res.status(201).json({ message: "task deleted", taskDelete });
     } catch (error) {
