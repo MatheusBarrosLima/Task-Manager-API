@@ -8,7 +8,7 @@ export const authControllers = {
     try {
       const { email, password } = loginSchema.parse(req.body);
 
-      const token = await authServices.login(
+      const {token, id} = await authServices.login(
         { email, password }, userRepository);
 
       res.cookie(process.env.KEY_TOKEN, token, {
@@ -18,7 +18,7 @@ export const authControllers = {
         maxAge: 1000* 60 * 60 * 18 // 18h
       });
 
-      return res.status(201).json({ message: "login successful" });
+      return res.status(200).json({ message: "login successful", id });
     } catch (error) {
       return next(error);
     }
