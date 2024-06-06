@@ -1,32 +1,35 @@
 import express from "express";
-import "dotenv/config";
-import { router } from "./routes";
-import { appErrors } from "./errors/appErrors";
-import { pageNotFoundError } from "./errors/pageNotFoundError";
+import { routes } from "./routes";
 import { sqliteConnection } from "./databases/sqlite3";
 import { runMigrations } from "./databases/sqlite3/migrations";
-import cookieParser from "cookie-parser"
-import cors from "cors" 
+import { appErrors } from "./errors/appErrors";
+import { pageNotFound } from "./errors/pageNotFound";
+import cookieParser from "cookie-parser";
+import cors from "cors";
+import "dotenv/config";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
-app.use(cookieParser())
+app.use(cookieParser());
 
-const whiteList = [ 
+const whiteList = [
   "http://localhost:5173",
   "http://127.0.0.1:5173",
-]
+  "https://task-manager-seven-indol.vercel.app",
+];
 
-app.use(cors({
-  origin:whiteList,
-  credentials: true
-}))
+app.use(
+  cors({
+    origin: whiteList,
+    credentials: true,
+  })
+);
 
-app.use(router);
+app.use(routes);
 
-app.use(pageNotFoundError);
+app.use(pageNotFound);
 app.use(appErrors);
 
 app.listen(PORT, () => {
@@ -34,11 +37,7 @@ app.listen(PORT, () => {
 });
 
 sqliteConnection()
-  .then(() => {
-    console.log("Database is connected...");
-  })
-  .catch((error) => {
-    console.error("Database is not connected - ", error);
-  });
+  .then(() => console.log("Database is connected..."))
+  .catch((error) => console.error("Database is not connected - ", error));
 
 runMigrations();

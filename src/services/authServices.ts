@@ -1,28 +1,25 @@
 import { compare } from "bcrypt";
-import { appError } from "../errors/appError";
-import { UserDataCreate } from "../repositories/userRepository";
-import { LoginDataTypes } from "../validations/loginSchema";
 import { sign } from "jsonwebtoken";
-
-type Repository = {
-  getUserByEmail(email: string): Promise<UserDataCreate | undefined>;
-};
+import { appError } from "../errors/appError";
+import { LoginDataTypes } from "../validations/loginSchema";
+import { UserRepositoryTypes } from "./userServices";
 
 export const authServices = {
-  async login(data: LoginDataTypes, repository: Repository) {
+  async login(data: LoginDataTypes, repository: UserRepositoryTypes) {
     try {
       const { email, password } = data;
+
       const user = await repository.getUserByEmail(email);
       if (!user) throw appError("email or password invalid!", 401);
 
       const passwordCheck = await compare(password, user.password);
-      if (!passwordCheck) throw appError("email or password invalid!", 400);
+      if (!passwordCheck) throw appError("email or password invalid!", 401);
 
       const token = sign({ id: user.id }, process.env.SECRET_TOKEN, {
         expiresIn: process.env.EXPIRESIN_TOKEN,
       });
 
-      return {token, id: user.id};
+      return { id: user.id, token };
     } catch (error) {
       throw error;
     }

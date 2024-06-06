@@ -1,22 +1,25 @@
 import { sqliteConnection } from "../databases/sqlite3";
-import {
-  CreateTaskDataType,
-  UserTasksPagination,
-} from "../services/taskServices";
+import { appError } from "../errors/appError";
+import { TaskDataCreate, UserTasksPagination } from "../services/taskServices";
 
-export type TaskDataCreate = CreateTaskDataType & { id: string };
+export type CreateTaskDataTypes = TaskDataCreate & { id: string };
+export type UpdateTaskDataTypes = CreateTaskDataTypes & { updated_at: Date };
 
 export const taskRepository = {
-  async createTask(data: TaskDataCreate) {
+  async createTask(data: CreateTaskDataTypes) {
     try {
-      const { id, title, description, date, status, id_user } = data;
+      const { id, title, description, date, status, user_id } = data;
 
       const db = await sqliteConnection();
-      const querySQL =
-        "INSERT INTO tasks(id, title, description, date, status, id_user) VALUES(?,?,?,?,?,?)";
-      await db.run(querySQL, [id, title, description, date, status, id_user]);
 
-      return { id };
+      const querySQL = `
+        INSERT INTO tasks (id, title, description, date, status, user_id)
+        VALUES (?, ?, ?, ?, ?, ?);
+      `;
+
+      await db.run(querySQL, [id, title, description, date, status, user_id]);
+
+      return { id, title, description, date, status, user_id };
     } catch (error) {
       throw error;
     }
@@ -26,9 +29,8 @@ export const taskRepository = {
     try {
       const db = await sqliteConnection();
 
-      const querySQL = "SELECT * FROM tasks WHERE id = ?";
-
-      const task = await db.get(querySQL, [id]);
+      const quarySQL = "SELECT * FROM tasks WHERE id = ?;";
+      const task = await db.get(quarySQL, [id]);
 
       return task;
     } catch (error) {
@@ -41,61 +43,88 @@ export const taskRepository = {
       const { userID, limit, offset, filter } = data;
 
       const db = await sqliteConnection();
+      let querySQL = "";
+      let tasks = [];
 
-      if(filter == "all"){
-        const querySQL = 
-        `SELECT * FROM tasks 
-        WHERE id_user = ?
-        ORDER BY created_at DESC
-        LIMIT  ? OFFSET  ?
-      ;`;
+      switch (filter) {
+        case "all":
+          querySQL = `
+            SELECT * FROM tasks 
+            WHERE user_id = ?
+            ORDER BY created_at DESC
+            LIMIT ? OFFSET ?;
+          `;
+          tasks = await db.all(querySQL, [userID, limit, offset]);
+          break;
 
-      const tasks = await db.all(querySQL, [userID, limit, offset]);
+        case "completed":
+          querySQL = `
+            SELECT * FROM tasks 
+            WHERE user_id = ? AND status = 'completed'
+            ORDER BY created_at DESC 
+            LIMIT ? OFFSET ?;
+          `;
+          tasks = await db.all(querySQL, [userID, limit, offset]);
+          break;
 
-      return { tasks };
-      } else {
-        const querySQL = 
-        `SELECT * FROM tasks 
-        WHERE id_user = ? AND status = ?
-        ORDER BY created_at DESC
-        LIMIT ? OFFSET ?
-;`;
+        case "pending":
+          querySQL = `
+            SELECT * FROM tasks 
+            WHERE user_id = ? AND status = 'pending' AND date >= CURRENT_DATE
+            ORDER BY created_at DESC 
+            LIMIT ? OFFSET ?;
+          `;
+          tasks = await db.all(querySQL, [userID, limit, offset]);
+          break;
 
+        case "late":
+          querySQL = `
+            SELECT * FROM tasks 
+            WHERE user_id = ? AND status = 'pending' AND date < CURRENT_DATE
+            ORDER BY created_at DESC 
+            LIMIT ? OFFSET ?;
+          `;
+          tasks = await db.all(querySQL, [userID, limit, offset]);
+          break;
 
-      const tasks = await db.all(querySQL, [userID, filter, limit, offset]);
-
-      return { tasks };
+        default:
+          throw appError("invalid filter!", 400);
       }
+
+      return tasks;
     } catch (error) {
       throw error;
     }
   },
-  async updateTask(data: TaskDataCreate) {
+
+  async updateTask(data: UpdateTaskDataTypes) {
     try {
-      const { id, title, description, date, status, id_user } = data;
+      const { id, title, description, date, status, user_id, updated_at } = data;
 
       const db = await sqliteConnection();
-      const querySQL = `UPDATE tasks
-        SET title = ?, description = ?, date = ? , status = ?, id_user = ? 
-        WHERE id = ?;
-        `;
-      await db.run(querySQL, [title, description, date, status, id_user, id]);
 
-      return { id };
+      const querySQL = `
+        UPDATE tasks 
+        SET title = ?, description = ?, date = ?, status = ?, updated_at = ?
+        WHERE id = ?;
+      `;
+
+      await db.run(querySQL, [title, description, date, status, updated_at, id]);
+
+      return { id, title, description, date, status, user_id, updated_at };
     } catch (error) {
       throw error;
     }
   },
 
-  async deleteTask(id: string) {
+  async deleteTaskByID(id: string) {
     try {
       const db = await sqliteConnection();
 
       const querySQL = "DELETE FROM tasks WHERE id = ?;";
+      await db.run(querySQL, [id]);
 
-      const taskDelete = await db.run(querySQL, [id]);
-
-      return taskDelete;
+      return { id };
     } catch (error) {
       throw error;
     }

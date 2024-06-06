@@ -1,4 +1,4 @@
-import { string, z } from "zod";
+import { z } from "zod";
 
 export const userSchema = z
   .object({
@@ -32,4 +32,4 @@ export const userSchema = z
   })
   .strict();
 
-  export type UserDataTypes = z.infer<typeof userSchema>
+export type UserDataTypes = z.infer<typeof userSchema>;

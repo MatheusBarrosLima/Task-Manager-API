@@ -1,4 +1,4 @@
-import { string, z } from "zod";
+import { z } from "zod";
 
 export const loginSchema = z
   .object({
@@ -7,7 +7,7 @@ export const loginSchema = z
         required_error: "email is required!",
         invalid_type_error: "email must be a string!",
       })
-      .email("email poorly formatted!")
+      .email({ message: "email badly formatted!" })
       .max(255, "max email length exceeded!"),
 
     password: z
@@ -15,9 +15,8 @@ export const loginSchema = z
         required_error: "password is required!",
         invalid_type_error: "password must be a string!",
       })
-      .max(20, "max password length exceeded!")
-        
+      .max(255, "max password length exceeded!"),
   })
   .strict();
 
-  export type LoginDataTypes = z.infer<typeof loginSchema>
+export type LoginDataTypes = z.infer<typeof loginSchema>;
